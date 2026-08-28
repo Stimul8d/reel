@@ -1,5 +1,7 @@
 # reel
 
+[stimul8d.github.io/reel](https://stimul8d.github.io/reel/)
+
 Screen recording with your face in the corner and, optionally, your own words
 burned in as captions. A Loom-shaped thing that never leaves the Mac: no
 account, no upload, no bot, no server. You press stop and there is an mp4 in
