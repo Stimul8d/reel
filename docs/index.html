@@ -77,10 +77,10 @@
   @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 
   /* Hero */
-  .hero { display: grid; grid-template-columns: 1fr 512px; gap: 52px; padding: 76px 0 34px; align-items: start; }
+  .hero { display: grid; grid-template-columns: 1fr 452px; gap: 44px; padding: 76px 0 34px; align-items: start; }
   h1 {
     font-family: var(--display); font-weight: 700;
-    font-size: clamp(40px, 5.4vw, 64px); line-height: 0.98; letter-spacing: -0.025em;
+    font-size: clamp(38px, 4.6vw, 57px); line-height: 0.98; letter-spacing: -0.025em;
     margin: 0 0 22px;
   }
   h1 em { font-style: normal; color: var(--rec); }
@@ -255,11 +255,9 @@
   <div class="hero">
     <div>
       <h1>Send the video.<br>Keep the <em>recording.</em></h1>
-      <p class="lede">Loom wants an account and a copy of your screen on someone
-        else's server. Every walkthrough you have ever recorded is sitting there.</p>
-      <p class="lede">Reel takes the screen, your face and your voice, transcribes
-        it with the model already on the Mac, and hands you an mp4.
-        <b>Nothing leaves the machine.</b></p>
+      <p class="lede">Like Loom, without the account, the upload, or a copy of
+        your screen on someone else's server. Screen, face and voice, captioned
+        by the model already on the Mac.</p>
       <div class="cta">
         <a class="btn" href="https://github.com/Stimul8d/reel/releases/latest/download/Reel.zip">Download</a>
         <a class="btn ghost" href="https://github.com/Stimul8d/reel">Source</a>
@@ -314,179 +312,99 @@
   </div>
 </div>
 
-<section id="folder">
+<section>
   <div class="wrap">
-    <h2>It keeps its working out</h2>
-    <p class="sub">Every recording is a directory, not a file. The one you send is
-      <code>recording.mp4</code>. The rest costs nothing to keep and is the reason
-      a mistake is not permanent.</p>
-
-    <table class="files">
-      <tr><td>recording.mp4</td><td>the one you send: screen, camera, mixed sound</td></tr>
-      <tr><td>recording-captioned.mp4</td><td>the same with captions burned in, only if you asked</td></tr>
-      <tr class="keep"><td>video.mp4</td><td>picture only, before the sound went on. Kept deliberately</td></tr>
-      <tr class="keep"><td>me.wav</td><td>your microphone, raw</td></tr>
-      <tr class="keep"><td>them.wav</td><td>whatever the Mac was playing, raw</td></tr>
-      <tr><td>transcript.json</td><td>timed lines and caption chunks, on the video's clock</td></tr>
-      <tr><td>captions.srt</td><td>subtitles you can switch off, unlike burned ones</td></tr>
-    </table>
-  </div>
-</section>
-
-<section id="clocks">
-  <div class="wrap">
-    <h2>Two clocks, one file</h2>
-    <p class="sub">The obvious way to build this is to mix the microphone and the
-      system audio into the video as it records. That is the wrong way, and the
-      damage cannot be undone afterwards.</p>
-
+    <h2>What you get</h2>
     <div class="items">
       <div class="item">
-        <h3>Different hardware</h3>
-        <p>Your microphone and the Mac's own output run off separate clocks that
-          drift apart. Sum them live and the drift is baked into the file. There is
-          nothing left to line up against.</p>
+        <h3>One mp4</h3>
+        <p>Screen, camera bubble and both sides of the sound, mixed after you stop.</p>
       </div>
       <div class="item">
-        <h3>So it records them apart</h3>
-        <p>The live pass writes picture with no sound, plus one wav per lane. Each
-          lane notes the wall clock of its own first sample.</p>
+        <h3>Captions, if you want them</h3>
+        <p>Transcribed on the machine, burned in on a second pass.</p>
       </div>
       <div class="item">
-        <h3>And joins them after you stop</h3>
-        <p>No clock pressure, so each lane is shifted onto the video's timeline
-          once, mixed, and muxed on. The picture is copied across untouched rather
-          than re-encoded to gain a soundtrack.</p>
+        <h3>The working out</h3>
+        <p>Both raw wavs and the uncaptioned cut stay on disk. That is what makes
+          a mistake cheap.</p>
       </div>
       <div class="item">
-        <h3>Two lanes, not one</h3>
-        <p>Your voice and the Mac's output stay separate all the way through, so
-          the transcript knows which is which without a speaker model. Captions come
-          off your lane; a demo's own soundtrack is not dialogue.</p>
+        <h3>A bubble you can move</h3>
+        <p>A real window, dragged where you like, excluded from the shot.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<section id="captions">
-  <div class="wrap">
-    <h2>Captions are always a second pass</h2>
-    <p class="sub">Apple's on-device model is fast and accurate on words and
-      unreliable on names, which is exactly the thing you will want to fix. So the
-      clean recording is never touched, and captions are derived from it.</p>
 
     <div class="diff">
-      <div class="before"><span class="mark">−</span><s>so I built it on top of Whisper Kit</s></div>
-      <div class="after"><span class="mark">+</span><span>so I built it on top of WhisperKit</span></div>
+      <div class="before"><span class="mark">−</span><s>built on top of Whisper Kit</s></div>
+      <div class="after"><span class="mark">+</span><span>built on top of WhisperKit</span></div>
     </div>
-
-    <p class="prose" style="margin-top:26px">Fix the line in <code>transcript.json</code>,
-      run <code>reel --burn &lt;dir&gt;</code>, and the captions are re-cut from the
-      recording you already have. Nobody says it again.</p>
+    <p class="shotcap" style="text-align:left;min-height:0;margin-top:14px">Fix the
+      line, <code>reel --burn &lt;dir&gt;</code>, captions re-cut. Nobody says it again.</p>
   </div>
 </section>
 
-<section id="private">
+<section id="folder">
   <div class="wrap">
-    <h2>Nothing leaves the Mac</h2>
-    <p class="sub">Not a policy, an architecture. There is no server to send it to
-      and no account to make.</p>
-    <div class="items">
-      <div class="item">
-        <h3>The model is already here</h3>
-        <p>macOS 26 ships the long-form speech model Notes uses. It arrives as a
-          system asset the first time you record, so there is nothing in the app
-          bundle and nothing to sign up for.</p>
-      </div>
-      <div class="item">
-        <h3>No bot joins anything</h3>
-        <p>It taps this machine's own audio. Nothing announces itself in a meeting,
-          because nothing is in the meeting.</p>
-      </div>
-      <div class="item">
-        <h3>Recording other people</h3>
-        <p>Being local does not make it consensual. If your voice is not the only
-          one on the file, say so first.</p>
-      </div>
-    </div>
+    <h2>In the folder</h2>
+    <table class="files">
+      <tr><td>recording.mp4</td><td>the one you send</td></tr>
+      <tr><td>recording-captioned.mp4</td><td>with captions burned in</td></tr>
+      <tr class="keep"><td>video.mp4</td><td>picture, before the sound went on</td></tr>
+      <tr class="keep"><td>me.wav</td><td>your microphone, raw</td></tr>
+      <tr class="keep"><td>them.wav</td><td>what the Mac was playing, raw</td></tr>
+      <tr><td>transcript.json</td><td>timed lines, on the video's clock</td></tr>
+      <tr><td>captions.srt</td><td>subtitles you can switch off</td></tr>
+    </table>
   </div>
 </section>
 
 <section id="install">
   <div class="wrap">
     <h2>Getting it running</h2>
-    <p class="sub">Two permissions and one Gatekeeper detour. The order matters,
-      because the important one never asks.</p>
+    <p class="sub">The important permission never asks, so the order matters.</p>
 
     <ol class="steps">
-      <li>Unzip and drag <b>Reel.app</b> into Applications.</li>
-      <li>The first open is refused: it is signed, but not notarized by Apple.
-        Go to <b>System Settings &gt; Privacy &amp; Security</b>, scroll to the
-        bottom, and choose <b>Open Anyway</b>. Or
-        <code>xattr -dr com.apple.quarantine /Applications/Reel.app</code>.</li>
-      <li>In the same settings pane, open <b>Screen &amp; System Audio
-        Recording</b> and turn Reel on. It will already be listed, switched off.</li>
-      <li><b>Quit and reopen it.</b> Screen recording only takes effect on the
-        next launch.</li>
-      <li>The camera and microphone prompt normally the first time you record.</li>
+      <li>Unzip, drag <b>Reel.app</b> into Applications.</li>
+      <li>First open is refused. <b>System Settings &gt; Privacy &amp; Security</b>,
+        scroll down, <b>Open Anyway</b>.</li>
+      <li>Same pane, <b>Screen &amp; System Audio Recording</b>, turn Reel on.
+        It is already listed, switched off.</li>
+      <li>Quit and reopen. It only takes effect on the next launch.</li>
     </ol>
 
     <div class="warnbox"><b>Screen recording never prompts.</b> There is no
-      dialogue for it, ever. It appears in that settings list already switched
-      off and waits for you. Every confusing failure here starts there, and the
-      error you get first is <code>-3801</code>, which claims you declined
-      something you were never asked.</div>
+      dialogue for it, ever. Skip step 3 and you get error <code>-3801</code>,
+      which claims you declined something you were never asked.</div>
 
-    <div class="warnbox"><b>It is signed with a certificate I made, not Apple's.</b>
-      That is fine to install: signature checking is content-based, so the
-      certificate never has to exist on your machine. It also means the permission
-      you grant survives an update, because macOS pins that grant to the
-      certificate rather than to a hash of the build.</div>
-  </div>
-</section>
-
-<section id="build">
-  <div class="wrap">
-    <h2>Or build it</h2>
-    <p class="prose">Command Line Tools, no Xcode project, no package manager.
-      <code>make signing-identity</code> makes you a code signing certificate of
-      your own, which takes a second and needs no password and no admin rights.</p>
-
-    <pre>git clone https://github.com/Stimul8d/reel
-cd reel
+    <p class="prose" style="margin-top:34px">Or build it. Command Line Tools, no
+      Xcode, no package manager.</p>
+    <pre>git clone https://github.com/Stimul8d/reel &amp;&amp; cd reel
 make signing-identity   <span class="c"># once per machine</span>
 make install            <span class="c"># -> ~/Applications/Reel.app</span>
-open ~/Applications/Reel.app</pre>
-
-    <p class="prose"><code>reel --probe</code> prints exactly what the machine
-      will and will not let it do, which beats finding out halfway through a
-      recording. <code>make release</code> packages the zip.</p>
-
-    <div class="warnbox"><b>Do not sign it ad-hoc.</b> The screen recording grant
-      is pinned to the code requirement, and for an ad-hoc signature that is a
-      hash which changes on every build, so every rebuild silently revokes it.
-      A certificate keeps the requirement stable.</div>
+reel --probe            <span class="c"># what this Mac will allow</span></pre>
   </div>
 </section>
 
 <section id="honest">
   <div class="wrap">
     <h2>What it does not do yet</h2>
-    <p class="sub">It is early. It records, composites, transcribes and muxes, and
-      it has not been through a long recording or a wall of external displays.</p>
     <div class="items">
       <div class="item">
-        <h3>No settings are remembered</h3>
-        <p>The panel resets to defaults every launch. No login item either.</p>
+        <h3>Forgets everything</h3>
+        <p>The panel resets every launch. No login item.</p>
       </div>
       <div class="item">
         <h3>Whole display only</h3>
-        <p>No window picker, no region select, no pause and resume, no trimming.</p>
+        <p>No window picker, no region, no pause, no trim.</p>
       </div>
       <div class="item">
-        <h3>It never tidies up</h3>
-        <p>The raw wavs are about 12 MB a minute and stay where they land. Nothing
-          deletes them for you.</p>
+        <h3>Never tidies up</h3>
+        <p>Raw wavs are about 12 MB a minute and stay where they land.</p>
+      </div>
+      <div class="item">
+        <h3>Barely tested</h3>
+        <p>Short recordings, one machine. Long ones and multiple displays, not yet.</p>
       </div>
     </div>
   </div>
