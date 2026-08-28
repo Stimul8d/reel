@@ -169,9 +169,12 @@
   .result .m { font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
   .shotcap {
     font-family: var(--mono); font-size: 11.5px; color: var(--faint);
-    margin-top: 12px; text-align: center; min-height: 3.4em; line-height: 1.7;
+    margin-top: 12px; text-align: center; line-height: 1.7;
   }
-  .shotcap b { color: var(--rec); font-weight: 500; }
+  .note {
+    font-family: var(--mono); font-size: 11.5px; color: var(--faint);
+    margin: 14px 0 0; line-height: 1.7;
+  }
 
   /* Body sections */
   section { padding: 62px 0; border-top: 1px solid var(--rule); }
@@ -306,8 +309,7 @@
           </div>
         </div>
       </div>
-      <div class="shotcap" id="shotcap">A recreation, not a screenshot.
-        The bubble is a real window you drag anywhere.</div>
+      <div class="shotcap">A recreation, not a screenshot.</div>
     </div>
   </div>
 </div>
@@ -339,8 +341,8 @@
       <div class="before"><span class="mark">−</span><s>built on top of Whisper Kit</s></div>
       <div class="after"><span class="mark">+</span><span>built on top of WhisperKit</span></div>
     </div>
-    <p class="shotcap" style="text-align:left;min-height:0;margin-top:14px">Fix the
-      line, <code>reel --burn &lt;dir&gt;</code>, captions re-cut. Nobody says it again.</p>
+    <p class="note">Fix the line, <code>reel --burn &lt;dir&gt;</code>, captions
+      re-cut. Nobody says it again.</p>
   </div>
 </section>
 
@@ -427,34 +429,26 @@ reel --probe            <span class="c"># what this Mac will allow</span></pre>
   const stripTime = document.getElementById('stripTime');
   const recTime = document.getElementById('recTime');
   const capbox = document.getElementById('capbox');
-  const shotcap = document.getElementById('shotcap');
 
   // The demo runs the whole story: it records, captions land behind the voice,
   // it stops, and a file exists. Then it starts over.
   const lines = [
-    [1.4, 4.0, 'Right, this is the bit that breaks.'],
-    [4.4, 7.4, 'Mic and screen run on different clocks.'],
-    [7.7, 10.6, 'So the sound goes on after you stop.'],
-    [11.0, 13.6, 'One file, and it never left the Mac.'],
+    [1.4, 4.8, 'Right, this is the bit I mentioned.'],
+    [5.2, 9.2, 'See how it drops the last line?'],
+    [9.6, 13.6, "I've pushed a fix, have a look."],
   ];
   const RECORD = 14.6, HOLD = 3.4, LOOP = RECORD + HOLD;
-  const notes = [
-    'A recreation, not a screenshot. The bubble is a real window you drag anywhere.',
-    'Captions are transcribed on the machine, then burned in as a second pass.',
-    'The bubble is excluded from the capture, so it lands in the film exactly once.',
-  ];
-
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (still) {
     stage.classList.add('live');
-    capbox.textContent = lines[3][2];
+    capbox.textContent = lines[lines.length - 1][2];
     capbox.classList.add('on');
     recTime.textContent = stripTime.textContent = '00:11';
     return;
   }
 
   const clock = t => '00:' + String(Math.floor(t)).padStart(2, '0');
-  let start = performance.now(), note = -1;
+  let start = performance.now();
 
   function frame(now) {
     const t = ((now - start) / 1000) % LOOP;
@@ -475,9 +469,6 @@ reel --probe            <span class="c"># what this Mac will allow</span></pre>
     } else {
       capbox.classList.remove('on');
     }
-
-    const n = Math.floor(((now - start) / 1000 / LOOP)) % notes.length;
-    if (n !== note) { note = n; shotcap.textContent = notes[n]; }
 
     requestAnimationFrame(frame);
   }
