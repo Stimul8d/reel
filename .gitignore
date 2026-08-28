@@ -1,0 +1,8 @@
+build/
+.build/
+out/
+.DS_Store
+*.xcuserstate
+*.mp4
+*.wav
+*.mov

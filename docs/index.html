@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel, screen recording that stays on your Mac</title>
+<meta name="description" content="A macOS menu bar recorder: your screen, your face in the corner, your voice, and captions transcribed on the machine. No account, no upload, no bot.">
+<link rel="icon" href="icon.png">
+<meta property="og:title" content="Reel">
+<meta property="og:description" content="Screen, camera and voice into one file. Captions transcribed on the machine. Nothing leaves it.">
+<meta property="og:image" content="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #0b0d10;
+    --panel: #15181d;
+    --raised: #1b1f26;
+    --rule: #262b33;
+    --text: #e9ecf1;
+    --dim: #949ba6;
+    --faint: #666d78;
+    --rec: #f0655a;
+    --lens: #5bb8f5;
+    --strip: 34px;
+    --display: "IBM Plex Sans Condensed", ui-sans-serif, system-ui, sans-serif;
+    --body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --void: #f2f1ee;
+      --panel: #ffffff;
+      --raised: #f7f7f5;
+      --rule: #dedcd6;
+      --text: #14161a;
+      --dim: #5f646c;
+      --faint: #8e939b;
+      --rec: #c8392c;
+      --lens: #1d6fa8;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--void); color: var(--text);
+    font-family: var(--body); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--rec); color: var(--void); }
+  :focus-visible { outline: 2px solid var(--rec); outline-offset: 3px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+  .mono { font-family: var(--mono); }
+
+  /* The strip: the app lives in one of these, so the page hangs off one. */
+  .menubar {
+    position: sticky; top: 0; z-index: 20; height: var(--strip);
+    background: color-mix(in srgb, var(--void) 88%, transparent);
+    backdrop-filter: saturate(140%) blur(12px);
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center;
+    font-family: var(--mono); font-size: 12px; color: var(--dim);
+  }
+  .menubar .wrap { display: flex; align-items: center; gap: 14px; width: 100%; }
+  .menubar b { color: var(--text); font-weight: 600; letter-spacing: 0.01em; }
+  .menubar .spacer { flex: 1; }
+  .status { display: flex; align-items: center; gap: 7px; }
+  .status .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    border: 1.5px solid var(--faint); transition: background .3s, border-color .3s;
+  }
+  .status.live .dot { background: var(--rec); border-color: var(--rec); animation: breathe 1.6s ease-in-out infinite; }
+  .status .t { font-variant-numeric: tabular-nums; }
+  .status.live .t { color: var(--rec); }
+  @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr 512px; gap: 52px; padding: 76px 0 34px; align-items: start; }
+  h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(40px, 5.4vw, 64px); line-height: 0.98; letter-spacing: -0.025em;
+    margin: 0 0 22px;
+  }
+  h1 em { font-style: normal; color: var(--rec); }
+  .lede { font-size: 17.5px; color: var(--dim); margin: 0 0 16px; max-width: 42ch; }
+  .lede b { color: var(--text); font-weight: 500; }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 30px 0 14px; }
+  .btn {
+    font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.01em;
+    text-decoration: none; padding: 11px 18px; border: 1px solid var(--text);
+    background: var(--text); color: var(--void); transition: background .15s, color .15s;
+  }
+  .btn:hover { background: transparent; color: var(--text); }
+  .btn.ghost { background: transparent; color: var(--text); border-color: var(--rule); }
+  .btn.ghost:hover { border-color: var(--text); }
+  .specs { font-family: var(--mono); font-size: 12px; color: var(--faint); line-height: 1.9; }
+  .specs a { color: var(--dim); }
+
+  /* The viewport: what the app is actually making, recreated rather than screenshotted. */
+  .stage { position: relative; }
+  .viewport {
+    position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+    background: linear-gradient(160deg, #2b3038, #191d23);
+    border: 1px solid var(--rule); border-radius: 10px;
+    /* Everything inside is sized against the frame, so the mock scales with it
+       instead of leaving a half-empty window at large sizes. */
+    container-type: size;
+    box-shadow: 0 18px 50px rgba(0,0,0,.34);
+  }
+  @media (prefers-color-scheme: light) {
+    .viewport { background: linear-gradient(160deg, #cfd4dc, #aeb5c0); box-shadow: 0 18px 44px rgba(0,0,0,.12); }
+  }
+  /* A mocked-up window, so nobody's real desktop ends up on a web page. */
+  .mockwin {
+    position: absolute; left: 8%; top: 11%; width: 62%;
+    background: rgba(12,14,18,.82); border: 1px solid rgba(255,255,255,.10);
+    border-radius: 1.2cqh; padding: 0; overflow: hidden;
+  }
+  .mockwin .bar { display: flex; gap: 1cqh; padding: 1.6cqh 2cqh; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .mockwin .bar i { width: 1.6cqh; height: 1.6cqh; border-radius: 50%; background: rgba(255,255,255,.20); }
+  .mockwin .body { padding: 2.2cqh 2.4cqh; display: grid; gap: 1.5cqh; }
+  .mockwin .body span { height: 1.2cqh; border-radius: 1cqh; background: rgba(255,255,255,.13); display: block; }
+  .mockwin .body span.k { background: color-mix(in srgb, var(--lens) 55%, transparent); }
+  .mockwin .cursor { height: 1.2cqh; width: 1.4cqh; background: var(--lens); animation: blink 1.1s steps(2) infinite; }
+  @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
+
+  .bubble {
+    position: absolute; left: 4.5%; bottom: 6.5%; height: 17%; aspect-ratio: 1;
+    border-radius: 50%; overflow: hidden;
+    border: 2px solid rgba(255,255,255,.9);
+    background: linear-gradient(165deg, #3d4653, #222831);
+    display: grid; place-items: center;
+    transition: border-color .4s ease;
+  }
+  .bubble svg { width: 68%; height: 68%; opacity: .55; margin-top: 14%; }
+
+  .capbox {
+    position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+    max-width: 74%; padding: 8px 15px; border-radius: 9px;
+    background: rgba(0,0,0,.72); color: #fff;
+    font-weight: 600; font-size: clamp(11px, 1.75vw, 15px); line-height: 1.35;
+    text-align: center; white-space: nowrap;
+    opacity: 0; transition: opacity .22s ease;
+  }
+  .capbox.on { opacity: 1; }
+
+  .rec {
+    position: absolute; right: 3.5%; top: 5%;
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11.5px; color: #fff;
+    background: rgba(0,0,0,.55); border-radius: 20px; padding: 4px 11px;
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .stage.live .rec { opacity: 1; }
+  .rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--rec); animation: breathe 1.6s ease-in-out infinite; }
+  .rec .t { font-variant-numeric: tabular-nums; }
+
+  /* The file, once it stops. */
+  .result {
+    position: absolute; inset: 0; display: grid; place-content: center; gap: 8px;
+    background: color-mix(in srgb, var(--void) 84%, transparent);
+    backdrop-filter: blur(3px); text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  }
+  .stage.done .result { opacity: 1; }
+  .result .f { font-family: var(--mono); font-size: 14px; color: var(--text); }
+  .result .m { font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
+  .shotcap {
+    font-family: var(--mono); font-size: 11.5px; color: var(--faint);
+    margin-top: 12px; text-align: center; min-height: 3.4em; line-height: 1.7;
+  }
+  .shotcap b { color: var(--rec); font-weight: 500; }
+
+  /* Body sections */
+  section { padding: 62px 0; border-top: 1px solid var(--rule); }
+  section > .wrap > h2 {
+    font-family: var(--display); font-weight: 600; font-size: 27px; letter-spacing: -0.015em;
+    margin: 0 0 6px;
+  }
+  .sub { color: var(--dim); margin: 0 0 34px; max-width: 62ch; }
+  .items { display: grid; gap: 2px; }
+  .item { display: grid; grid-template-columns: 210px 1fr; gap: 30px; padding: 18px 0; border-top: 1px solid var(--rule); }
+  .item:first-child { border-top: none; }
+  .item h3 { font-family: var(--display); font-weight: 600; font-size: 17px; margin: 0; letter-spacing: -0.01em; }
+  .item p { margin: 0; color: var(--dim); font-size: 15px; }
+  .item code, .prose code, li code, td code { font-family: var(--mono); font-size: 0.86em; color: var(--text); }
+
+  table.files { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  table.files td { padding: 11px 0; border-top: 1px solid var(--rule); vertical-align: top; color: var(--dim); }
+  table.files tr:first-child td { border-top: none; }
+  table.files td:first-child { font-family: var(--mono); font-size: 13px; color: var(--text); width: 240px; white-space: nowrap; }
+  table.files tr.keep td:first-child { color: var(--lens); }
+
+  .diff { border: 1px solid var(--rule); background: var(--panel); border-radius: 8px; overflow: hidden; margin-top: 30px; }
+  .diff div { font-family: var(--mono); font-size: 13px; padding: 11px 16px; display: flex; gap: 12px; }
+  .diff .before { color: var(--faint); border-bottom: 1px solid var(--rule); }
+  .diff .before s { text-decoration-color: var(--faint); }
+  .diff .mark { color: var(--faint); user-select: none; }
+  .diff .after .mark { color: var(--rec); }
+
+  .prose { color: var(--dim); font-size: 15px; max-width: 68ch; }
+  .prose b { color: var(--text); font-weight: 500; }
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 22px 0; max-width: 68ch; }
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 0 34px; margin-bottom: 11px; color: var(--dim); font-size: 15px; }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    font-family: var(--mono); font-size: 11px; color: var(--rec);
+    border: 1px solid var(--rule); border-radius: 50%; width: 21px; height: 21px;
+    display: grid; place-items: center;
+  }
+  pre {
+    font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; margin: 18px 0; color: var(--text);
+  }
+  pre .c { color: var(--faint); }
+  .warnbox { border-left: 2px solid var(--rec); padding-left: 18px; color: var(--dim); font-size: 15px; max-width: 68ch; }
+  .warnbox + .warnbox { margin-top: 20px; }
+
+  footer { border-top: 1px solid var(--rule); padding: 34px 0 70px; }
+  footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  footer a { color: var(--dim); text-decoration-color: var(--rule); }
+  footer .spacer { flex: 1; }
+
+  @media (max-width: 940px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 52px; }
+    .item { grid-template-columns: 1fr; gap: 6px; }
+    table.files td:first-child { width: auto; }
+    table.files td { display: block; border: none; padding: 2px 0; }
+    table.files tr { display: block; padding: 11px 0; border-top: 1px solid var(--rule); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="menubar">
+  <div class="wrap">
+    <b>reel</b>
+    <span>0.1.0</span>
+    <span class="spacer"></span>
+    <span class="status" id="strip" aria-hidden="true">
+      <span class="dot"></span>
+      <span class="t" id="stripTime">00:00</span>
+    </span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>Send the video.<br>Keep the <em>recording.</em></h1>
+      <p class="lede">Loom wants an account and a copy of your screen on someone
+        else's server. Every walkthrough you have ever recorded is sitting there.</p>
+      <p class="lede">Reel takes the screen, your face and your voice, transcribes
+        it with the model already on the Mac, and hands you an mp4.
+        <b>Nothing leaves the machine.</b></p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/Stimul8d/reel">Source</a>
+        <a class="btn ghost" href="#build">Build it</a>
+      </div>
+      <div class="specs">
+        Apple Silicon · macOS 26 · free, MIT<br>
+        no prebuilt download, <a href="#build">and there is a reason</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="stage" id="stage">
+        <div class="viewport">
+          <div class="mockwin">
+            <div class="bar"><i></i><i></i><i></i></div>
+            <div class="body">
+              <span class="k" style="width:52%"></span>
+              <span style="width:78%"></span>
+              <span style="width:64%"></span>
+              <span class="k" style="width:38%"></span>
+              <span style="width:83%"></span>
+              <span style="width:47%"></span>
+              <span style="width:71%"></span>
+              <span class="k" style="width:44%"></span>
+              <span style="width:59%"></span>
+              <span style="width:80%"></span>
+              <span style="width:35%"></span>
+              <span class="cursor"></span>
+            </div>
+          </div>
+
+          <div class="rec"><i></i><span class="t" id="recTime">00:00</span></div>
+
+          <div class="bubble">
+            <svg viewBox="0 0 64 64" fill="#fff" aria-hidden="true">
+              <circle cx="32" cy="21" r="12"/>
+              <path d="M8 60c0-13 11-21 24-21s24 8 24 21z"/>
+            </svg>
+          </div>
+
+          <div class="capbox" id="capbox"></div>
+
+          <div class="result">
+            <div class="f">recording.mp4</div>
+            <div class="m">1920 × 1246 · 30 fps · 4.3 MB · captions burned in</div>
+          </div>
+        </div>
+      </div>
+      <div class="shotcap" id="shotcap">A recreation, not a screenshot.
+        The bubble is a real window you drag anywhere.</div>
+    </div>
+  </div>
+</div>
+
+<section id="folder">
+  <div class="wrap">
+    <h2>It keeps its working out</h2>
+    <p class="sub">Every recording is a directory, not a file. The one you send is
+      <code>recording.mp4</code>. The rest costs nothing to keep and is the reason
+      a mistake is not permanent.</p>
+
+    <table class="files">
+      <tr><td>recording.mp4</td><td>the one you send: screen, camera, mixed sound</td></tr>
+      <tr><td>recording-captioned.mp4</td><td>the same with captions burned in, only if you asked</td></tr>
+      <tr class="keep"><td>video.mp4</td><td>picture only, before the sound went on. Kept deliberately</td></tr>
+      <tr class="keep"><td>me.wav</td><td>your microphone, raw</td></tr>
+      <tr class="keep"><td>them.wav</td><td>whatever the Mac was playing, raw</td></tr>
+      <tr><td>transcript.json</td><td>timed lines and caption chunks, on the video's clock</td></tr>
+      <tr><td>captions.srt</td><td>subtitles you can switch off, unlike burned ones</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="clocks">
+  <div class="wrap">
+    <h2>Two clocks, one file</h2>
+    <p class="sub">The obvious way to build this is to mix the microphone and the
+      system audio into the video as it records. That is the wrong way, and the
+      damage cannot be undone afterwards.</p>
+
+    <div class="items">
+      <div class="item">
+        <h3>Different hardware</h3>
+        <p>Your microphone and the Mac's own output run off separate clocks that
+          drift apart. Sum them live and the drift is baked into the file. There is
+          nothing left to line up against.</p>
+      </div>
+      <div class="item">
+        <h3>So it records them apart</h3>
+        <p>The live pass writes picture with no sound, plus one wav per lane. Each
+          lane notes the wall clock of its own first sample.</p>
+      </div>
+      <div class="item">
+        <h3>And joins them after you stop</h3>
+        <p>No clock pressure, so each lane is shifted onto the video's timeline
+          once, mixed, and muxed on. The picture is copied across untouched rather
+          than re-encoded to gain a soundtrack.</p>
+      </div>
+      <div class="item">
+        <h3>Two lanes, not one</h3>
+        <p>Your voice and the Mac's output stay separate all the way through, so
+          the transcript knows which is which without a speaker model. Captions come
+          off your lane; a demo's own soundtrack is not dialogue.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="captions">
+  <div class="wrap">
+    <h2>Captions are always a second pass</h2>
+    <p class="sub">Apple's on-device model is fast and accurate on words and
+      unreliable on names, which is exactly the thing you will want to fix. So the
+      clean recording is never touched, and captions are derived from it.</p>
+
+    <div class="diff">
+      <div class="before"><span class="mark">−</span><s>so I built it on top of Whisper Kit</s></div>
+      <div class="after"><span class="mark">+</span><span>so I built it on top of WhisperKit</span></div>
+    </div>
+
+    <p class="prose" style="margin-top:26px">Fix the line in <code>transcript.json</code>,
+      run <code>reel --burn &lt;dir&gt;</code>, and the captions are re-cut from the
+      recording you already have. Nobody says it again.</p>
+  </div>
+</section>
+
+<section id="private">
+  <div class="wrap">
+    <h2>Nothing leaves the Mac</h2>
+    <p class="sub">Not a policy, an architecture. There is no server to send it to
+      and no account to make.</p>
+    <div class="items">
+      <div class="item">
+        <h3>The model is already here</h3>
+        <p>macOS 26 ships the long-form speech model Notes uses. It arrives as a
+          system asset the first time you record, so there is nothing in the app
+          bundle and nothing to sign up for.</p>
+      </div>
+      <div class="item">
+        <h3>No bot joins anything</h3>
+        <p>It taps this machine's own audio. Nothing announces itself in a meeting,
+          because nothing is in the meeting.</p>
+      </div>
+      <div class="item">
+        <h3>Recording other people</h3>
+        <p>Being local does not make it consensual. If your voice is not the only
+          one on the file, say so first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="build">
+  <div class="wrap">
+    <h2>Building it</h2>
+    <p class="prose">There is no download, and that is deliberate rather than lazy.
+      macOS pins a screen recording permission to the <b>exact certificate</b> the
+      app was signed with. A binary signed on my machine would be refused on yours,
+      and the error it gives is a lie about you having declined something. So the
+      first build makes you a signing identity of your own.</p>
+
+    <pre><span class="c"># macOS 26 on Apple Silicon, Command Line Tools, no Xcode needed</span>
+git clone https://github.com/Stimul8d/reel
+cd reel
+make signing-identity   <span class="c"># once per machine, no sudo, no prompts</span>
+make install            <span class="c"># -> ~/Applications/Reel.app</span>
+open ~/Applications/Reel.app</pre>
+
+    <ol class="steps">
+      <li>Open <b>System Settings &gt; Privacy &amp; Security &gt; Screen &amp; System
+        Audio Recording</b> and turn Reel on. It will be listed and switched off.</li>
+      <li>Relaunch. Screen recording only takes effect on the next launch.</li>
+      <li>The camera and microphone prompt normally the first time you record.</li>
+      <li><code>reel --probe</code> prints exactly what the machine will and will
+        not let it do, which beats finding out halfway through a recording.</li>
+    </ol>
+
+    <div class="warnbox"><b>Screen recording never prompts.</b> For a self-signed
+      app there is no dialogue at all. It appears in that settings list already
+      switched off and waits for you. Every confusing failure here starts there.</div>
+
+    <div class="warnbox"><b>Do not sign it ad-hoc.</b> The permission is pinned to
+      the code requirement, and for an ad-hoc signature that is a hash which changes
+      on every build, so every rebuild silently revokes it.
+      <code>make signing-identity</code> makes a self-signed certificate instead and
+      the grant survives rebuilds.</div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="wrap">
+    <h2>What it does not do yet</h2>
+    <p class="sub">It is early. It records, composites, transcribes and muxes, and
+      it has not been through a long recording or a wall of external displays.</p>
+    <div class="items">
+      <div class="item">
+        <h3>No settings are remembered</h3>
+        <p>The panel resets to defaults every launch. No login item either.</p>
+      </div>
+      <div class="item">
+        <h3>Whole display only</h3>
+        <p>No window picker, no region select, no pause and resume, no trimming.</p>
+      </div>
+      <div class="item">
+        <h3>It never tidies up</h3>
+        <p>The raw wavs are about 12 MB a minute and stay where they land. Nothing
+          deletes them for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Reel · MIT</span>
+    <a href="https://github.com/Stimul8d/reel">github.com/Stimul8d/reel</a>
+    <span class="spacer"></span>
+    <a href="https://stimul8d.github.io/procwatch/">ProcWatch</a>
+    <a href="https://github.com/Stimul8d">Stimul8d</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const strip = document.getElementById('strip');
+  const stripTime = document.getElementById('stripTime');
+  const recTime = document.getElementById('recTime');
+  const capbox = document.getElementById('capbox');
+  const shotcap = document.getElementById('shotcap');
+
+  // The demo runs the whole story: it records, captions land behind the voice,
+  // it stops, and a file exists. Then it starts over.
+  const lines = [
+    [1.4, 4.0, 'Right, this is the bit that keeps breaking.'],
+    [4.4, 7.4, 'The mic and the screen are on different clocks,'],
+    [7.7, 10.6, 'so the sound goes on after you press stop.'],
+    [11.0, 13.6, 'One file, and it never left the Mac.'],
+  ];
+  const RECORD = 14.6, HOLD = 3.4, LOOP = RECORD + HOLD;
+  const notes = [
+    'A recreation, not a screenshot. The bubble is a real window you drag anywhere.',
+    'Captions are transcribed on the machine, then burned in as a second pass.',
+    'The bubble is excluded from the capture, so it lands in the film exactly once.',
+  ];
+
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) {
+    stage.classList.add('live');
+    capbox.textContent = lines[3][2];
+    capbox.classList.add('on');
+    recTime.textContent = stripTime.textContent = '00:11';
+    return;
+  }
+
+  const clock = t => '00:' + String(Math.floor(t)).padStart(2, '0');
+  let start = performance.now(), note = -1;
+
+  function frame(now) {
+    const t = ((now - start) / 1000) % LOOP;
+    const recording = t < RECORD;
+
+    stage.classList.toggle('live', recording);
+    stage.classList.toggle('done', !recording);
+    strip.classList.toggle('live', recording);
+
+    const shown = recording ? t : RECORD;
+    recTime.textContent = stripTime.textContent = clock(shown);
+
+    let text = '';
+    if (recording) for (const [a, b, s] of lines) if (t >= a && t < b) text = s;
+    if (text) {
+      if (capbox.textContent !== text) capbox.textContent = text;
+      capbox.classList.add('on');
+    } else {
+      capbox.classList.remove('on');
+    }
+
+    const n = Math.floor(((now - start) / 1000 / LOOP)) % notes.length;
+    if (n !== note) { note = n; shotcap.textContent = notes[n]; }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
