@@ -3,12 +3,10 @@
 Screen recording with your face in the corner and, optionally, your own words
 burned in as captions. Like Loom, except nothing leaves the Mac.
 
-[stimul8d.github.io/reel](https://stimul8d.github.io/reel/)
-
 ## Get it
 
-[Download Reel.zip](https://github.com/Stimul8d/reel/releases/latest/download/Reel.zip)
-Apple Silicon, macOS 26, 612 KB.
+[Download Reel.zip](../../releases/latest/download/Reel.zip) from the latest
+release. Apple Silicon, macOS 26, 612 KB.
 
 1. Unzip, drag **Reel.app** into Applications.
 2. First open is refused: it is signed, but not notarized by Apple.
