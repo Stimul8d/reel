@@ -47,12 +47,27 @@ reel --probe                                # what this machine will allow
 reel --help
 ```
 
-## Building
+## Getting it
+
+[Download Reel.zip](https://github.com/Stimul8d/reel/releases/latest/download/Reel.zip)
+· Apple Silicon, macOS 26, 612 KB.
+
+1. Unzip, drag **Reel.app** into Applications.
+2. First open is refused, because it is signed but not notarized by Apple.
+   **System Settings > Privacy & Security**, scroll down, **Open Anyway**. Or
+   `xattr -dr com.apple.quarantine /Applications/Reel.app`.
+3. Same pane, **Screen & System Audio Recording**, turn Reel on. It is already
+   listed and switched off, because that permission never prompts.
+4. Quit and reopen. It only takes effect on the next launch.
+5. Camera and microphone prompt normally the first time you record.
+
+## Or build it
 
 ```
 make signing-identity   # once per machine, shared with scribe
 make install            # -> ~/Applications/Reel.app
 make run ARGS="--probe"
+make release            # -> build/Reel.zip
 ```
 
 `swiftc` and a Makefile, no Xcode project, same as procwatch and scribe.
@@ -66,6 +81,17 @@ only symptom is `SCStream` error **-3801, "the user declined TCCs"**, which is a
 lie. `make signing-identity` makes a self-signed cert so the requirement becomes
 `identifier "house.huntley.reel" and certificate root = H"..."` and survives
 rebuilds. Reel and scribe share the cert.
+
+**A self-signed cert is fine to distribute**, which is not obvious and was worth
+checking rather than assuming. Signed a copy with a throwaway cert, deleted that
+cert and its trust setting from the keychain, and `codesign --verify --deep
+--strict` still reported *valid on disk, satisfies its Designated Requirement*
+with the entitlements intact. Signature checking is content-based; the
+certificate never has to exist on the other machine. Only `spctl` objects, and
+that is notarization, which is a separate thing you cannot buy your way out of
+without an Apple Developer account. It is also strictly better than ad-hoc for
+this app: the requirement is identical across versions, so an update does not
+cost the user their screen recording grant.
 
 **Screen Recording never prompts.** For a self-signed app it appears in System
 Settings > Privacy & Security > Screen & System Audio Recording with the toggle

@@ -261,12 +261,12 @@
         it with the model already on the Mac, and hands you an mp4.
         <b>Nothing leaves the machine.</b></p>
       <div class="cta">
-        <a class="btn" href="https://github.com/Stimul8d/reel">Source</a>
-        <a class="btn ghost" href="#build">Build it</a>
+        <a class="btn" href="https://github.com/Stimul8d/reel/releases/latest/download/Reel.zip">Download</a>
+        <a class="btn ghost" href="https://github.com/Stimul8d/reel">Source</a>
       </div>
       <div class="specs">
-        Apple Silicon · macOS 26 · free, MIT<br>
-        no prebuilt download, <a href="#build">and there is a reason</a>
+        Apple Silicon · macOS 26 · 612 KB · free, MIT<br>
+        not notarized, <a href="#install">one trip to Privacy &amp; Security</a>
       </div>
     </div>
 
@@ -412,40 +412,60 @@
   </div>
 </section>
 
+<section id="install">
+  <div class="wrap">
+    <h2>Getting it running</h2>
+    <p class="sub">Two permissions and one Gatekeeper detour. The order matters,
+      because the important one never asks.</p>
+
+    <ol class="steps">
+      <li>Unzip and drag <b>Reel.app</b> into Applications.</li>
+      <li>The first open is refused: it is signed, but not notarized by Apple.
+        Go to <b>System Settings &gt; Privacy &amp; Security</b>, scroll to the
+        bottom, and choose <b>Open Anyway</b>. Or
+        <code>xattr -dr com.apple.quarantine /Applications/Reel.app</code>.</li>
+      <li>In the same settings pane, open <b>Screen &amp; System Audio
+        Recording</b> and turn Reel on. It will already be listed, switched off.</li>
+      <li><b>Quit and reopen it.</b> Screen recording only takes effect on the
+        next launch.</li>
+      <li>The camera and microphone prompt normally the first time you record.</li>
+    </ol>
+
+    <div class="warnbox"><b>Screen recording never prompts.</b> There is no
+      dialogue for it, ever. It appears in that settings list already switched
+      off and waits for you. Every confusing failure here starts there, and the
+      error you get first is <code>-3801</code>, which claims you declined
+      something you were never asked.</div>
+
+    <div class="warnbox"><b>It is signed with a certificate I made, not Apple's.</b>
+      That is fine to install: signature checking is content-based, so the
+      certificate never has to exist on your machine. It also means the permission
+      you grant survives an update, because macOS pins that grant to the
+      certificate rather than to a hash of the build.</div>
+  </div>
+</section>
+
 <section id="build">
   <div class="wrap">
-    <h2>Building it</h2>
-    <p class="prose">There is no download, and that is deliberate rather than lazy.
-      macOS pins a screen recording permission to the <b>exact certificate</b> the
-      app was signed with. A binary signed on my machine would be refused on yours,
-      and the error it gives is a lie about you having declined something. So the
-      first build makes you a signing identity of your own.</p>
+    <h2>Or build it</h2>
+    <p class="prose">Command Line Tools, no Xcode project, no package manager.
+      <code>make signing-identity</code> makes you a code signing certificate of
+      your own, which takes a second and needs no password and no admin rights.</p>
 
-    <pre><span class="c"># macOS 26 on Apple Silicon, Command Line Tools, no Xcode needed</span>
-git clone https://github.com/Stimul8d/reel
+    <pre>git clone https://github.com/Stimul8d/reel
 cd reel
-make signing-identity   <span class="c"># once per machine, no sudo, no prompts</span>
+make signing-identity   <span class="c"># once per machine</span>
 make install            <span class="c"># -> ~/Applications/Reel.app</span>
 open ~/Applications/Reel.app</pre>
 
-    <ol class="steps">
-      <li>Open <b>System Settings &gt; Privacy &amp; Security &gt; Screen &amp; System
-        Audio Recording</b> and turn Reel on. It will be listed and switched off.</li>
-      <li>Relaunch. Screen recording only takes effect on the next launch.</li>
-      <li>The camera and microphone prompt normally the first time you record.</li>
-      <li><code>reel --probe</code> prints exactly what the machine will and will
-        not let it do, which beats finding out halfway through a recording.</li>
-    </ol>
+    <p class="prose"><code>reel --probe</code> prints exactly what the machine
+      will and will not let it do, which beats finding out halfway through a
+      recording. <code>make release</code> packages the zip.</p>
 
-    <div class="warnbox"><b>Screen recording never prompts.</b> For a self-signed
-      app there is no dialogue at all. It appears in that settings list already
-      switched off and waits for you. Every confusing failure here starts there.</div>
-
-    <div class="warnbox"><b>Do not sign it ad-hoc.</b> The permission is pinned to
-      the code requirement, and for an ad-hoc signature that is a hash which changes
-      on every build, so every rebuild silently revokes it.
-      <code>make signing-identity</code> makes a self-signed certificate instead and
-      the grant survives rebuilds.</div>
+    <div class="warnbox"><b>Do not sign it ad-hoc.</b> The screen recording grant
+      is pinned to the code requirement, and for an ad-hoc signature that is a
+      hash which changes on every build, so every rebuild silently revokes it.
+      A certificate keeps the requirement stable.</div>
   </div>
 </section>
 

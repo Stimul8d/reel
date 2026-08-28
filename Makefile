@@ -1,4 +1,5 @@
 APP     := reel
+VERSION := 0.1.0
 BUILD   := build
 SRC     := $(wildcard Sources/Reel/*.swift)
 OVERLAY := $(BUILD)/overlay.yaml
@@ -56,7 +57,7 @@ bundle: $(BIN)
 	@rm -rf $(APPDIR)
 	@mkdir -p $(APPDIR)/Contents/MacOS $(APPDIR)/Contents/Resources
 	@cp $(BIN) $(APPDIR)/Contents/MacOS/reel
-	@cp Resources/Info.plist $(APPDIR)/Contents/Info.plist
+	@sed -e 's/@VERSION@/$(VERSION)/g' Resources/Info.plist > $(APPDIR)/Contents/Info.plist
 	@$(BIN) --makeicon $(BUILD) >/dev/null
 	@iconutil -c icns $(BUILD)/AppIcon.iconset -o $(APPDIR)/Contents/Resources/AppIcon.icns
 	@codesign --force --options runtime --entitlements Resources/Reel.entitlements --sign "$(IDENTITY)" $(APPDIR) 2>/dev/null \
@@ -92,4 +93,32 @@ run: install
 probe: $(BIN)
 	$(BIN) --probe
 
-.PHONY: bundle install signing-identity run probe
+## release: the zip that goes on a GitHub release.
+##
+## Signed with the same self-signed identity as every other build, and that is
+## fine to hand to other people: signature verification is content-based, so the
+## certificate never has to exist on their machine. Checked by signing a copy,
+## deleting the certificate and its trust setting from the keychain, and running
+## codesign --verify --deep --strict: valid on disk, satisfies its Designated
+## Requirement, entitlements intact.
+##
+## It is better than ad-hoc for this app specifically. TCC pins the Screen
+## Recording grant to the code requirement; ad-hoc makes that the cdhash, so
+## every update would silently revoke it and the user would have to find the
+## toggle again. With a certificate the requirement is identifier + certificate
+## root, which is identical across versions, so the grant survives an update.
+##
+## Gatekeeper still rejects it, because it is not notarized. That costs whoever
+## downloads it one trip to Privacy & Security. Nothing avoids that without a
+## paid Apple Developer account.
+##
+## Arm64 only, deliberately: this needs macOS 26, which does not run on Intel.
+ZIP := $(BUILD)/Reel.zip
+
+release: bundle
+	@rm -f $(ZIP)
+	@ditto -c -k --sequesterRsrc --keepParent $(APPDIR) $(ZIP)
+	@codesign --verify --deep --strict $(APPDIR) && echo "signature verifies"
+	@echo "packaged $(ZIP) ($$(du -h $(ZIP) | cut -f1))"
+
+.PHONY: bundle install signing-identity run probe release
